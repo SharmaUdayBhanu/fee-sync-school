@@ -61,9 +61,9 @@ const FeeStatus: React.FC<FeeStatusProps> = ({
           </span>
         )}
       </div>
-      <div className="w-full bg-gray-200 rounded-full h-2.5">
+      <div className="w-full bg-gray-200 rounded-full h-3">  {/* Increased height for better touch */}
         <div 
-          className={`h-2.5 rounded-full ${
+          className={`h-3 rounded-full ${
             status === 'paid' ? 'bg-green-500' : 
             status === 'partial' ? 'bg-yellow-500' : 
             'bg-orange-500'

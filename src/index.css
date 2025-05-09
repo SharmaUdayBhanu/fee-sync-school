@@ -39,6 +39,9 @@
     --status-paid: 88 71% 95%;
     --status-partial: 48 98% 90%;
     --status-unpaid: 26 98% 81%;
+    
+    /* Variable for mobile viewport height */
+    --app-height: 100vh;
   }
 
   .dark {
@@ -84,6 +87,14 @@
 
   body {
     @apply bg-background text-foreground;
+    height: var(--app-height);
+    overflow-y: auto;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Fix for iOS input zooming */
+  input, select, textarea {
+    @apply text-base;
   }
 }
 
@@ -96,5 +107,18 @@
   }
   .status-unpaid {
     @apply bg-[hsl(var(--status-unpaid))] text-orange-800 border-orange-300;
+  }
+  
+  /* Mobile optimizations */
+  .mobile-safe-area {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* Improve touch targets for mobile */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
   }
 }
