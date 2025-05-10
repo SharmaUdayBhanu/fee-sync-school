@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -31,8 +30,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useToast } from '@/components/ui/use-toast';
-import { Search, Plus, Users, Trash2, Eye } from 'lucide-react';
+import { Search, Plus, Users, Trash2, Eye, Table as TableIcon, List } from 'lucide-react';
 import StudentCard from '../components/StudentCard';
 import { getAllStudents, classList, addStudent, deleteStudent } from '../services/students';
 import type { Student } from '../services/students';
@@ -42,6 +49,7 @@ const Students = () => {
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [students, setStudents] = useState<Student[]>([]);
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [newStudent, setNewStudent] = useState({
     name: '',
     guardianName: '',
@@ -72,6 +80,12 @@ const Students = () => {
     const statusOrder = { unpaid: 0, partial: 1, paid: 2 };
     return statusOrder[a.feeStatus as keyof typeof statusOrder] - statusOrder[b.feeStatus as keyof typeof statusOrder];
   });
+
+  // Group students by class for table view
+  const studentsByClass = classList.reduce((acc, className) => {
+    acc[className] = sortedStudents.filter(student => student.className === className);
+    return acc;
+  }, {} as Record<string, Student[]>);
 
   const handleAddStudent = () => {
     // Validation
@@ -138,6 +152,173 @@ const Students = () => {
         variant: "destructive",
       });
     }
+  };
+
+  // Render table view of students grouped by class
+  const renderTableView = () => {
+    return (
+      <div className="space-y-8">
+        {classList.map(className => {
+          const classStudents = studentsByClass[className] || [];
+          
+          if (selectedClass && selectedClass !== className) return null;
+          
+          return classStudents.length > 0 ? (
+            <div key={className} className="rounded-md border">
+              <div className="bg-muted/50 px-4 py-3 rounded-t-md">
+                <h3 className="text-lg font-medium">Class {className}</h3>
+                <p className="text-sm text-muted-foreground">{classStudents.length} students</p>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Roll No.</TableHead>
+                    <TableHead>Student Name</TableHead>
+                    <TableHead>Guardian Name</TableHead>
+                    <TableHead>Fee Status</TableHead>
+                    <TableHead className="w-[100px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {classStudents.map(student => (
+                    <TableRow key={student.id}>
+                      <TableCell className="font-medium">{student.rollNumber}</TableCell>
+                      <TableCell>{student.name}</TableCell>
+                      <TableCell>{student.guardianName}</TableCell>
+                      <TableCell>
+                        <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          student.feeStatus === 'paid' 
+                            ? 'bg-green-100 text-green-800' 
+                            : student.feeStatus === 'partial' 
+                              ? 'bg-yellow-100 text-yellow-800' 
+                              : 'bg-orange-100 text-orange-800'
+                        }`}>
+                          {student.feeStatus === 'paid' ? 'Paid' : student.feeStatus === 'partial' ? 'Partial' : 'Unpaid'}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Link to={`/students/${student.id}`}>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                              <Eye className="h-4 w-4" />
+                              <span className="sr-only">View</span>
+                            </Button>
+                          </Link>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Delete</span>
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Student</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete {student.name}? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => handleDeleteStudent(student.id, student.name)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : null;
+        })}
+        
+        {!sortedStudents.length && (
+          <div className="bg-card rounded-md p-8 text-center">
+            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+            <h3 className="text-lg font-medium">No students found</h3>
+            <p className="text-muted-foreground mt-1">
+              {searchTerm || selectedClass ? 
+                'Try changing your search criteria.' : 
+                'Start by adding students to the system.'}
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Render card view of students
+  const renderCardView = () => {
+    return sortedStudents.length > 0 ? (
+      <div className="space-y-4">
+        {sortedStudents.map(student => (
+          <div key={student.id} className="relative">
+            <div className="absolute top-4 right-4 flex gap-2 z-10">
+              <Link to={`/students/${student.id}`}>
+                <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                  <Eye className="h-4 w-4" />
+                  <span className="sr-only">View</span>
+                </Button>
+              </Link>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-8 w-8 p-0 text-destructive hover:text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Delete</span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Student</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete {student.name}? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => handleDeleteStudent(student.id, student.name)}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+            
+            <StudentCard 
+              id={student.id}
+              name={student.name}
+              guardianName={student.guardianName}
+              rollNumber={student.rollNumber}
+              className={student.className}
+              feeStatus={student.feeStatus}
+              paidAmount={student.paidAmount}
+              totalAmount={student.totalAmount}
+              lastPaymentDate={student.lastPaymentDate}
+            />
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div className="bg-card rounded-md p-8 text-center">
+        <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+        <h3 className="text-lg font-medium">No students found</h3>
+        <p className="text-muted-foreground mt-1">
+          {searchTerm || selectedClass ? 
+            'Try changing your search criteria.' : 
+            'Start by adding students to the system.'}
+        </p>
+      </div>
+    );
   };
 
   return (
@@ -245,82 +426,43 @@ const Students = () => {
             />
           </div>
           
-          <Select value={selectedClass} onValueChange={setSelectedClass}>
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="All Classes" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All Classes</SelectItem>
-              {classList.map((cls) => (
-                <SelectItem key={cls} value={cls}>{cls}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Select value={selectedClass} onValueChange={setSelectedClass}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="All Classes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Classes</SelectItem>
+                {classList.map((cls) => (
+                  <SelectItem key={cls} value={cls}>{cls}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <div className="flex border rounded-md">
+              <Button 
+                variant={viewMode === 'card' ? 'default' : 'ghost'}
+                size="sm"
+                className="rounded-r-none"
+                onClick={() => setViewMode('card')}
+              >
+                <List className="h-4 w-4 mr-1" />
+                Cards
+              </Button>
+              <Button 
+                variant={viewMode === 'table' ? 'default' : 'ghost'}
+                size="sm"
+                className="rounded-l-none"
+                onClick={() => setViewMode('table')}
+              >
+                <TableIcon className="h-4 w-4 mr-1" />
+                Table
+              </Button>
+            </div>
+          </div>
         </div>
         
-        {sortedStudents.length > 0 ? (
-          <div className="space-y-4">
-            {sortedStudents.map(student => (
-              <div key={student.id} className="relative">
-                <div className="absolute top-4 right-4 flex gap-2 z-10">
-                  <Link to={`/students/${student.id}`}>
-                    <Button size="sm" variant="outline" className="h-8 w-8 p-0">
-                      <Eye className="h-4 w-4" />
-                      <span className="sr-only">View</span>
-                    </Button>
-                  </Link>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="outline" className="h-8 w-8 p-0 text-destructive hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Delete</span>
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Student</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete {student.name}? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={() => handleDeleteStudent(student.id, student.name)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-                
-                <StudentCard 
-                  id={student.id}
-                  name={student.name}
-                  guardianName={student.guardianName}
-                  rollNumber={student.rollNumber}
-                  className={student.className}
-                  feeStatus={student.feeStatus}
-                  paidAmount={student.paidAmount}
-                  totalAmount={student.totalAmount}
-                  lastPaymentDate={student.lastPaymentDate}
-                />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-card rounded-md p-8 text-center">
-            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <h3 className="text-lg font-medium">No students found</h3>
-            <p className="text-muted-foreground mt-1">
-              {searchTerm || selectedClass ? 
-                'Try changing your search criteria.' : 
-                'Start by adding students to the system.'}
-            </p>
-          </div>
-        )}
+        {viewMode === 'table' ? renderTableView() : renderCardView()}
       </main>
     </div>
   );
