@@ -186,14 +186,14 @@ const Fees = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold">Fees Management</h1>
-            <p className="text-gray-500">Manage fee structures and payments</p>
+            <p className="text-muted-foreground">Manage fee structures and payments</p>
           </div>
           
           <div className="flex flex-col sm:flex-row gap-3">
