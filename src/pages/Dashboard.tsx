@@ -2,7 +2,9 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Navbar from '../components/Navbar';
+import DashboardSummary from '../components/DashboardSummary';
 import StudentCard from '../components/StudentCard';
+import { useNavigate } from 'react-router-dom';
 
 // Mock data for class-wise fees
 const classFeeData = [
@@ -68,6 +70,12 @@ const pendingStudents = [
 ];
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  
+  const handleClassRowClick = (className: string) => {
+    navigate(`/students?class=${className}`);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -76,8 +84,10 @@ const Dashboard = () => {
         <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
         <p className="text-muted-foreground mb-8">Overview of school fee collection</p>
         
+        <DashboardSummary />
+        
         {/* Class-wise Fee Status */}
-        <Card>
+        <Card className="mt-8">
           <CardHeader>
             <CardTitle>Fee Collection by Class</CardTitle>
           </CardHeader>
@@ -96,7 +106,11 @@ const Dashboard = () => {
                 </thead>
                 <tbody className="divide-y">
                   {classFeeData.map((item, index) => (
-                    <tr key={index} className="hover:bg-accent/50">
+                    <tr 
+                      key={index} 
+                      className="hover:bg-accent/50 cursor-pointer" 
+                      onClick={() => handleClassRowClick(item.class)}
+                    >
                       <td className="py-3 font-medium">{item.class}</td>
                       <td className="py-3">{item.totalStudents}</td>
                       <td className="py-3 text-green-600">{item.paidStudents}</td>
