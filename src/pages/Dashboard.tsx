@@ -2,10 +2,22 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Navbar from '../components/Navbar';
-import DashboardSummary from '../components/DashboardSummary';
 import StudentCard from '../components/StudentCard';
 
-// Mock data - in a real app, this would come from your API
+// Mock data for class-wise fees
+const classFeeData = [
+  { class: 'Pre-Nursery', totalStudents: 15, paidStudents: 10, partialStudents: 3, unpaidStudents: 2, feeCollected: 18500 },
+  { class: 'Nursery', totalStudents: 18, paidStudents: 12, partialStudents: 4, unpaidStudents: 2, feeCollected: 22800 },
+  { class: 'Lower KG', totalStudents: 20, paidStudents: 15, partialStudents: 3, unpaidStudents: 2, feeCollected: 27000 },
+  { class: 'Upper KG', totalStudents: 22, paidStudents: 16, partialStudents: 4, unpaidStudents: 2, feeCollected: 29400 },
+  { class: '1st', totalStudents: 25, paidStudents: 18, partialStudents: 5, unpaidStudents: 2, feeCollected: 32500 },
+  { class: '2nd', totalStudents: 24, paidStudents: 19, partialStudents: 3, unpaidStudents: 2, feeCollected: 31200 },
+  { class: '3rd', totalStudents: 26, paidStudents: 20, partialStudents: 4, unpaidStudents: 2, feeCollected: 33800 },
+  { class: '4th', totalStudents: 28, paidStudents: 22, partialStudents: 4, unpaidStudents: 2, feeCollected: 36400 },
+  { class: '5th', totalStudents: 30, paidStudents: 25, partialStudents: 3, unpaidStudents: 2, feeCollected: 42000 },
+];
+
+// Recent payments mock data
 const recentPayments = [
   {
     id: "1",
@@ -57,41 +69,70 @@ const pendingStudents = [
 
 const Dashboard = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-        <p className="text-gray-500 mb-8">Overview of school fee collection</p>
+        <p className="text-muted-foreground mb-8">Overview of school fee collection</p>
         
-        <DashboardSummary />
+        {/* Class-wise Fee Status */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Fee Collection by Class</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left border-b">
+                    <th className="pb-2">Class</th>
+                    <th className="pb-2">Total Students</th>
+                    <th className="pb-2">Paid</th>
+                    <th className="pb-2">Partial</th>
+                    <th className="pb-2">Unpaid</th>
+                    <th className="pb-2 text-right">Fee Collected</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {classFeeData.map((item, index) => (
+                    <tr key={index} className="hover:bg-accent/50">
+                      <td className="py-3 font-medium">{item.class}</td>
+                      <td className="py-3">{item.totalStudents}</td>
+                      <td className="py-3 text-green-600">{item.paidStudents}</td>
+                      <td className="py-3 text-yellow-600">{item.partialStudents}</td>
+                      <td className="py-3 text-red-600">{item.unpaidStudents}</td>
+                      <td className="py-3 text-right font-medium">₹{item.feeCollected.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-          {/* Class-wise Fee Status */}
+          {/* Class-wise Fee Collection */}
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle>Fee Status by Class</CardTitle>
+              <CardTitle>Fee Collection Statistics</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="grid grid-cols-4 gap-4 text-sm font-medium">
-                  <div>Class</div>
-                  <div>Total Students</div>
-                  <div>Paid</div>
-                  <div>Pending</div>
-                </div>
-                
-                <div className="divide-y">
-                  {/* Class data rows */}
-                  {['1st', '2nd', '3rd', '4th', '5th'].map((classLevel) => (
-                    <div key={classLevel} className="grid grid-cols-4 gap-4 py-3 text-sm">
-                      <div className="font-medium">Class {classLevel}</div>
-                      <div>{Math.floor(Math.random() * 20) + 10}</div>
-                      <div className="text-green-600">{Math.floor(Math.random() * 15) + 5}</div>
-                      <div className="text-orange-600">{Math.floor(Math.random() * 5) + 1}</div>
+                {classFeeData.slice(0, 5).map((item, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Class {item.class}</span>
+                      <span className="text-sm">{Math.round((item.paidStudents / item.totalStudents) * 100)}% Collected</span>
                     </div>
-                  ))}
-                </div>
+                    <div className="w-full bg-secondary h-2 rounded-full">
+                      <div 
+                        className="bg-primary h-2 rounded-full"
+                        style={{ width: `${(item.paidStudents / item.totalStudents) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -107,11 +148,11 @@ const Dashboard = () => {
                   <div key={payment.id} className="flex justify-between items-start pb-4 border-b last:border-0">
                     <div>
                       <p className="font-medium">{payment.studentName}</p>
-                      <p className="text-sm text-gray-500">Class {payment.class}</p>
+                      <p className="text-sm text-muted-foreground">Class {payment.class}</p>
                     </div>
                     <div className="text-right">
                       <p className="font-medium">₹{payment.amount}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         {new Date(payment.date).toLocaleDateString('en-IN', {
                           day: 'numeric',
                           month: 'short'

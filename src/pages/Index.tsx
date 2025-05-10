@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Card, 
@@ -13,6 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
+import { Sun, Moon } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { useTheme } from '@/hooks/use-theme';
 
 const Index = () => {
   const [email, setEmail] = useState('');
@@ -25,6 +28,7 @@ const Index = () => {
   
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +42,7 @@ const Index = () => {
       if (email === 'admin@school.com' && password === 'password') {
         toast({
           title: "Login successful",
-          description: "Welcome back to the School Fee Management System",
+          description: "Welcome back to the D.M.S Fee Management System",
         });
         navigate('/dashboard');
       } else {
@@ -87,11 +91,29 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-primary">SchoolFee</h1>
-          <p className="text-gray-600">Fee Management System</p>
+        <div className="text-center mb-6">
+          <div className="flex justify-center mb-2">
+            <img 
+              src="/lovable-uploads/fffb5131-f0b0-445a-939d-341d385e0ce8.png" 
+              alt="D.M.S Logo" 
+              className="h-16 w-16" 
+            />
+          </div>
+          <h1 className="text-3xl font-bold text-primary">D.M.S Fee Management</h1>
+          <p className="text-muted-foreground">Fee Management System for Dayanand Model School</p>
+        </div>
+        
+        <div className="flex justify-center mb-6">
+          <div className="flex items-center space-x-2">
+            <Sun className="h-4 w-4 text-yellow-500" />
+            <Switch 
+              checked={theme === 'dark'}
+              onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+            />
+            <Moon className="h-4 w-4 text-blue-600" />
+          </div>
         </div>
         
         <Tabs defaultValue="login" className="w-full">

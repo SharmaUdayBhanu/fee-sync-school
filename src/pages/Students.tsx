@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,98 +20,44 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import StudentCard from '../components/StudentCard';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from '@/components/ui/use-toast';
-import { Search, Plus, Users } from 'lucide-react';
-
-// List of available classes
-const classList = [
-  'Pre-Nursery', 'Nursery', 'Lower KG', 'Upper KG',
-  '1st', '2nd', '3rd', '4th', '5th',
-  '6th', '7th', '8th', '9th', '10th'
-];
-
-// Mock student data
-const mockStudents = [
-  {
-    id: '1',
-    name: 'Aarav Kumar',
-    guardianName: 'Rajesh Kumar',
-    rollNumber: '101',
-    className: '5th',
-    feeStatus: 'paid',
-    paidAmount: 3000,
-    totalAmount: 3000,
-    lastPaymentDate: 'May 02, 2025'
-  },
-  {
-    id: '2',
-    name: 'Diya Sharma',
-    guardianName: 'Anita Sharma',
-    rollNumber: '102',
-    className: '5th',
-    feeStatus: 'unpaid',
-    paidAmount: 0,
-    totalAmount: 3000,
-    lastPaymentDate: undefined
-  },
-  {
-    id: '3',
-    name: 'Vihaan Patel',
-    guardianName: 'Suresh Patel',
-    rollNumber: '103',
-    className: '5th',
-    feeStatus: 'partial',
-    paidAmount: 1500,
-    totalAmount: 3000,
-    lastPaymentDate: 'Apr 20, 2025'
-  },
-  {
-    id: '4',
-    name: 'Ananya Singh',
-    guardianName: 'Vikram Singh',
-    rollNumber: '201',
-    className: '8th',
-    feeStatus: 'paid',
-    paidAmount: 4500,
-    totalAmount: 4500,
-    lastPaymentDate: 'May 05, 2025'
-  },
-  {
-    id: '5',
-    name: 'Rehan Malik',
-    guardianName: 'Faisal Malik',
-    rollNumber: '202',
-    className: '8th',
-    feeStatus: 'unpaid',
-    paidAmount: 0,
-    totalAmount: 4500,
-    lastPaymentDate: undefined
-  }
-];
+import { Search, Plus, Users, Trash2, Eye } from 'lucide-react';
+import StudentCard from '../components/StudentCard';
+import { getAllStudents, classList, addStudent, deleteStudent } from '../services/students';
+import type { Student } from '../services/students';
 
 const Students = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [students, setStudents] = useState<Student[]>([]);
   const [newStudent, setNewStudent] = useState({
     name: '',
     guardianName: '',
     rollNumber: '',
     className: ''
   });
+  
   const { toast } = useToast();
 
+  // Load students on component mount
+  useEffect(() => {
+    setStudents(getAllStudents());
+  }, []);
+
   // Filter students based on search term and selected class
-  const filteredStudents = mockStudents.filter(student => {
+  const filteredStudents = students.filter(student => {
     const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           student.guardianName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           student.rollNumber.toLowerCase().includes(searchTerm.toLowerCase());
@@ -139,27 +86,69 @@ const Students = () => {
 
     // Generate roll number if not provided
     const rollNumber = newStudent.rollNumber || 
-                       `${Math.floor(Math.random() * 900) + 100}`;
+                       `${newStudent.className}-${Math.floor(Math.random() * 900) + 100}`;
 
-    // In a real app, this would be an API call
+    // Create monthly fee status (all unpaid initially)
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthlyFeeStatus: {[month: string]: 'paid' | 'unpaid'} = {};
+    months.forEach(month => {
+      monthlyFeeStatus[month] = 'unpaid';
+    });
+
+    // Add the student
+    const added = addStudent({
+      name: newStudent.name,
+      guardianName: newStudent.guardianName,
+      rollNumber,
+      className: newStudent.className,
+      admissionDate: new Date().toISOString().split('T')[0],
+      feeStatus: 'unpaid',
+      paidAmount: 0,
+      totalAmount: 3000,
+      monthlyFeeStatus
+    });
+
+    // Update state with new student
+    setStudents(getAllStudents());
+    
     toast({
       title: "Student Added",
-      description: `${newStudent.name} has been added to Class ${newStudent.className}.`,
+      description: `${added.name} has been added to Class ${added.className}.`,
     });
     
     setIsDialogOpen(false);
     setNewStudent({ name: '', guardianName: '', rollNumber: '', className: '' });
   };
 
+  const handleDeleteStudent = (id: string, name: string) => {
+    const deleted = deleteStudent(id);
+    
+    if (deleted) {
+      setStudents(getAllStudents());
+      
+      toast({
+        title: "Student Deleted",
+        description: `${name} has been removed from the system.`,
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to delete student.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold">Students</h1>
-            <p className="text-gray-500">Manage and view student records</p>
+            <p className="text-muted-foreground">Manage and view student records</p>
           </div>
           
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -247,7 +236,7 @@ const Students = () => {
         
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by name, guardian or roll number..."
               className="pl-10"
@@ -272,25 +261,60 @@ const Students = () => {
         {sortedStudents.length > 0 ? (
           <div className="space-y-4">
             {sortedStudents.map(student => (
-              <StudentCard 
-                key={student.id}
-                id={student.id}
-                name={student.name}
-                guardianName={student.guardianName}
-                rollNumber={student.rollNumber}
-                className={student.className}
-                feeStatus={student.feeStatus as 'paid' | 'partial' | 'unpaid'}
-                paidAmount={student.paidAmount}
-                totalAmount={student.totalAmount}
-                lastPaymentDate={student.lastPaymentDate}
-              />
+              <div key={student.id} className="relative">
+                <div className="absolute top-4 right-4 flex gap-2 z-10">
+                  <Link to={`/students/${student.id}`}>
+                    <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                      <Eye className="h-4 w-4" />
+                      <span className="sr-only">View</span>
+                    </Button>
+                  </Link>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="h-8 w-8 p-0 text-destructive hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete</span>
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Student</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete {student.name}? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => handleDeleteStudent(student.id, student.name)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+                
+                <StudentCard 
+                  id={student.id}
+                  name={student.name}
+                  guardianName={student.guardianName}
+                  rollNumber={student.rollNumber}
+                  className={student.className}
+                  feeStatus={student.feeStatus}
+                  paidAmount={student.paidAmount}
+                  totalAmount={student.totalAmount}
+                  lastPaymentDate={student.lastPaymentDate}
+                />
+              </div>
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-md p-8 text-center">
-            <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+          <div className="bg-card rounded-md p-8 text-center">
+            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
             <h3 className="text-lg font-medium">No students found</h3>
-            <p className="text-gray-500 mt-1">
+            <p className="text-muted-foreground mt-1">
               {searchTerm || selectedClass ? 
                 'Try changing your search criteria.' : 
                 'Start by adding students to the system.'}
