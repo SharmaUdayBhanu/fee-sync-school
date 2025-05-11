@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -61,7 +62,13 @@ const Students = () => {
 
   // Load students on component mount
   useEffect(() => {
-    setStudents(getAllStudents());
+    const loadData = () => {
+      const allStudents = getAllStudents();
+      console.log("Loaded students:", allStudents);
+      setStudents(allStudents);
+    };
+    
+    loadData();
   }, []);
 
   // Filter students based on search term and selected class
@@ -320,6 +327,8 @@ const Students = () => {
       </div>
     );
   };
+
+  console.log("Render students:", students.length, sortedStudents.length);
 
   return (
     <div className="min-h-screen bg-background">

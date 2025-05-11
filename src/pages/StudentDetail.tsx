@@ -30,9 +30,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/components/ui/use-toast';
 import { ArrowLeft, User, Calendar, FileText, Trash2 } from 'lucide-react';
-import { getStudentById, deleteStudent, updateStudent } from '../services/students';
+import { getStudentById, deleteStudent, updateStudent, resetStudentData } from '../services/students';
 import type { Student } from '../services/students';
 import FeeStatus from '../components/FeeStatus';
+import { getPaymentsByStudentId } from '../services/payments';
 
 const StudentDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -44,10 +45,17 @@ const StudentDetail = () => {
 
   useEffect(() => {
     if (id) {
+      console.log("Fetching student with ID:", id);
       const fetchedStudent = getStudentById(id);
+      console.log("Fetched student:", fetchedStudent);
       
       if (fetchedStudent) {
         setStudent(fetchedStudent);
+        
+        // Get student payments
+        const payments = getPaymentsByStudentId(id);
+        console.log("Student payments:", payments);
+        
         // Set active month to current month or first month
         const currentMonth = new Date().toLocaleString('default', { month: 'long' });
         if (fetchedStudent.monthlyFeeStatus[currentMonth]) {
@@ -242,6 +250,24 @@ const StudentDetail = () => {
                   })}
                 </span>
               </div>
+              {student.phone && (
+                <div className="flex flex-col space-y-1">
+                  <span className="text-sm text-muted-foreground">Phone</span>
+                  <span className="font-medium">{student.phone}</span>
+                </div>
+              )}
+              {student.email && (
+                <div className="flex flex-col space-y-1">
+                  <span className="text-sm text-muted-foreground">Email</span>
+                  <span className="font-medium">{student.email}</span>
+                </div>
+              )}
+              {student.address && (
+                <div className="flex flex-col space-y-1">
+                  <span className="text-sm text-muted-foreground">Address</span>
+                  <span className="font-medium">{student.address}</span>
+                </div>
+              )}
             </CardContent>
           </Card>
           
