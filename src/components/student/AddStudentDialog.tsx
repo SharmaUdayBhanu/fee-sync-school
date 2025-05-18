@@ -21,6 +21,8 @@ import {
 import { Plus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { classList, addStudent } from '@/services/students';
+import { addStudentToSupabase } from '@/services/supabaseStudents';
+import { isSupabaseConnected } from '@/lib/supabase';
 
 type AddStudentDialogProps = {
   onStudentAdded: () => void;
@@ -34,9 +36,10 @@ const AddStudentDialog: React.FC<AddStudentDialogProps> = ({ onStudentAdded }) =
     rollNumber: '',
     className: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleAddStudent = () => {
+  const handleAddStudent = async () => {
     // Validation
     if (!newStudent.name || !newStudent.guardianName || !newStudent.className) {
       toast({
@@ -47,39 +50,66 @@ const AddStudentDialog: React.FC<AddStudentDialogProps> = ({ onStudentAdded }) =
       return;
     }
 
+    setIsLoading(true);
+
     // Generate roll number if not provided
     const rollNumber = newStudent.rollNumber || 
                        `${newStudent.className}-${Math.floor(Math.random() * 900) + 100}`;
 
-    // Create monthly fee status (all unpaid initially)
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 
-                    'July', 'August', 'September', 'October', 'November', 'December'];
-    const monthlyFeeStatus: {[month: string]: 'paid' | 'unpaid'} = {};
-    months.forEach(month => {
-      monthlyFeeStatus[month] = 'unpaid';
-    });
-
-    // Add the student
-    const added = addStudent({
-      name: newStudent.name,
-      guardianName: newStudent.guardianName,
-      rollNumber,
-      className: newStudent.className,
-      admissionDate: new Date().toISOString().split('T')[0],
-      feeStatus: 'unpaid',
-      paidAmount: 0,
-      totalAmount: 3000,
-      monthlyFeeStatus
-    });
-    
-    toast({
-      title: "Student Added",
-      description: `${added.name} has been added to Class ${added.className}.`,
-    });
-    
-    setIsDialogOpen(false);
-    setNewStudent({ name: '', guardianName: '', rollNumber: '', className: '' });
-    onStudentAdded();
+    try {
+      const isConnected = await isSupabaseConnected();
+      
+      let added;
+      if (isConnected) {
+        // Use Supabase if connected
+        added = await addStudentToSupabase({
+          name: newStudent.name,
+          guardianName: newStudent.guardianName,
+          rollNumber,
+          className: newStudent.className,
+          admissionDate: new Date().toISOString().split('T')[0],
+          feeStatus: 'unpaid',
+          paidAmount: 0,
+          totalAmount: 3000,
+          monthlyFeeStatus: {}
+        });
+      } else {
+        // Fallback to mock data if Supabase is not connected
+        added = addStudent({
+          name: newStudent.name,
+          guardianName: newStudent.guardianName,
+          rollNumber,
+          className: newStudent.className,
+          admissionDate: new Date().toISOString().split('T')[0],
+          feeStatus: 'unpaid',
+          paidAmount: 0,
+          totalAmount: 3000,
+          monthlyFeeStatus: {}
+        });
+      }
+      
+      if (added) {
+        toast({
+          title: "Student Added",
+          description: `${added.name} has been added to Class ${added.className}.`,
+        });
+        
+        setIsDialogOpen(false);
+        setNewStudent({ name: '', guardianName: '', rollNumber: '', className: '' });
+        onStudentAdded();
+      } else {
+        throw new Error("Failed to add student");
+      }
+    } catch (error) {
+      console.error("Error adding student:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add student. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -155,11 +185,11 @@ const AddStudentDialog: React.FC<AddStudentDialogProps> = ({ onStudentAdded }) =
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+          <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isLoading}>
             Cancel
           </Button>
-          <Button onClick={handleAddStudent}>
-            Add Student
+          <Button onClick={handleAddStudent} disabled={isLoading}>
+            {isLoading ? "Adding..." : "Add Student"}
           </Button>
         </DialogFooter>
       </DialogContent>

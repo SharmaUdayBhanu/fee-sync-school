@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,13 +44,9 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import FeeStatus from '../components/FeeStatus';
 import { Plus, FileText, Calendar } from 'lucide-react';
-
-// List of available classes
-const classList = [
-  'Pre-Nursery', 'Nursery', 'Lower KG', 'Upper KG',
-  '1st', '2nd', '3rd', '4th', '5th',
-  '6th', '7th', '8th', '9th', '10th'
-];
+import { updateFeeStructureInSupabase } from '@/services/supabaseStudents';
+import { isSupabaseConnected } from '@/lib/supabase';
+import { classList } from '@/services/students';
 
 // Mock fee types
 const feeTypes = [
@@ -135,9 +131,22 @@ const Fees = () => {
     monthlyFee: 0,
     admissionFee: 0
   });
+  const [usingSupabase, setUsingSupabase] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleCreateNewFee = () => {
+  // Check if Supabase is connected on component mount
+  useEffect(() => {
+    checkSupabaseConnection();
+  }, []);
+
+  const checkSupabaseConnection = async () => {
+    const connected = await isSupabaseConnected();
+    setUsingSupabase(connected);
+    console.log("Using Supabase:", connected);
+  };
+
+  const handleCreateNewFee = async () => {
     if (!newFee.name || !newFee.type) {
       toast({
         title: "Missing Information",
@@ -147,21 +156,34 @@ const Fees = () => {
       return;
     }
 
-    // In a real app, this would be an API call
-    toast({
-      title: "Fee Created",
-      description: `${newFee.name} has been created successfully.`
-    });
+    setIsLoading(true);
+    try {
+      // In a real app with Supabase, this would insert into a fee_types table
+      // For now, just show a success toast
+      toast({
+        title: "Fee Created",
+        description: `${newFee.name} has been created successfully.`
+      });
 
-    setIsNewFeeDialogOpen(false);
-    setNewFee({
-      name: '',
-      type: 'monthly',
-      dueDate: ''
-    });
+      setIsNewFeeDialogOpen(false);
+      setNewFee({
+        name: '',
+        type: 'monthly',
+        dueDate: ''
+      });
+    } catch (error) {
+      console.error("Error creating fee:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create fee portal",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleEditFeeStructure = () => {
+  const handleEditFeeStructure = async () => {
     if (!editingClass || !editingFee.monthlyFee || !editingFee.admissionFee) {
       toast({
         title: "Invalid Values",
@@ -171,18 +193,43 @@ const Fees = () => {
       return;
     }
 
-    // In a real app, this would be an API call
-    toast({
-      title: "Fee Structure Updated",
-      description: `Fee structure for ${editingClass} has been updated.`
-    });
+    setIsLoading(true);
+    try {
+      if (usingSupabase) {
+        // Update fee structure in Supabase
+        const updated = await updateFeeStructureInSupabase(
+          editingClass, 
+          editingFee.monthlyFee, 
+          editingFee.admissionFee
+        );
+        
+        if (!updated) {
+          throw new Error("Failed to update fee structure");
+        }
+      }
+      
+      // Show success message
+      toast({
+        title: "Fee Structure Updated",
+        description: `Fee structure for ${editingClass} has been updated.`
+      });
 
-    setIsEditFeeStructureDialogOpen(false);
-    setEditingClass(null);
-    setEditingFee({
-      monthlyFee: 0,
-      admissionFee: 0
-    });
+      setIsEditFeeStructureDialogOpen(false);
+      setEditingClass(null);
+      setEditingFee({
+        monthlyFee: 0,
+        admissionFee: 0
+      });
+    } catch (error) {
+      console.error("Error updating fee structure:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update fee structure",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -194,6 +241,11 @@ const Fees = () => {
           <div>
             <h1 className="text-3xl font-bold">Fees Management</h1>
             <p className="text-muted-foreground">Manage fee structures and payments</p>
+            {usingSupabase && (
+              <div className="mt-1 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Using Supabase
+              </div>
+            )}
           </div>
           
           <div className="flex flex-col sm:flex-row gap-3">
@@ -254,11 +306,11 @@ const Fees = () => {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsNewFeeDialogOpen(false)}>
+                  <Button variant="outline" onClick={() => setIsNewFeeDialogOpen(false)} disabled={isLoading}>
                     Cancel
                   </Button>
-                  <Button onClick={handleCreateNewFee}>
-                    Create Fee Portal
+                  <Button onClick={handleCreateNewFee} disabled={isLoading}>
+                    {isLoading ? "Creating..." : "Create Fee Portal"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -335,11 +387,11 @@ const Fees = () => {
                   )}
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsEditFeeStructureDialogOpen(false)}>
+                  <Button variant="outline" onClick={() => setIsEditFeeStructureDialogOpen(false)} disabled={isLoading}>
                     Cancel
                   </Button>
-                  <Button onClick={handleEditFeeStructure}>
-                    Update Fee Structure
+                  <Button onClick={handleEditFeeStructure} disabled={isLoading}>
+                    {isLoading ? "Updating..." : "Update Fee Structure"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
