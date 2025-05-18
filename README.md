@@ -1,11 +1,19 @@
 
 # DMS Fee Management System
 
-## Supabase Setup Instructions
+## Supabase Integration Instructions
 
-To set up the backend for this application, follow these steps:
+To enable full functionality with database connectivity, follow these steps:
 
-### 1. Create Tables in Supabase
+### 1. Connect your Lovable Project to Supabase:
+
+1. Click on the green Supabase button in the top right corner of the Lovable interface
+2. Follow the prompts to connect your project to Supabase
+3. Once connected, the app will automatically use your Supabase instance instead of mock data
+
+### 2. Create Tables in Supabase
+
+After connecting to Supabase, create the following tables using SQL or the Supabase Dashboard:
 
 #### Students Table
 ```sql
@@ -84,11 +92,11 @@ CREATE TABLE payments (
 );
 ```
 
-### 2. Set up Row Level Security (RLS)
+### 3. Set up Row Level Security (RLS)
 
 Enable Row Level Security for all tables and create policies to allow authenticated users to access the data.
 
-### 3. Seed Initial Data
+### 4. Seed Initial Data
 
 ```sql
 -- Insert initial classes
@@ -175,9 +183,9 @@ Whenever you make changes to the code:
 
 ## Troubleshooting
 
-If the Supabase connection isn't working:
+If the app displays mock data even after connecting to Supabase:
 
 1. Make sure you've connected your Lovable project to Supabase using the Supabase button on the top right
-2. Check that your tables are set up correctly in Supabase
+2. Check that your tables are set up correctly in Supabase following the SQL instructions above
 3. Ensure your RLS policies allow the app to access the data
 4. Try refreshing the app and checking the console logs for errors

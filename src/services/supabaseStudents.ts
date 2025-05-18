@@ -4,6 +4,11 @@ import { Student, ClassInfo } from './students';
 
 // Get all students from Supabase
 export const getAllStudentsFromSupabase = async (): Promise<Student[]> => {
+  if (!supabase) {
+    console.warn('Supabase client not initialized. Using mock data instead.');
+    return [];
+  }
+
   const { data, error } = await supabase
     .from('students')
     .select('*');
@@ -18,6 +23,11 @@ export const getAllStudentsFromSupabase = async (): Promise<Student[]> => {
 
 // Get student by ID from Supabase
 export const getStudentByIdFromSupabase = async (id: string): Promise<Student | undefined> => {
+  if (!supabase) {
+    console.warn('Supabase client not initialized. Using mock data instead.');
+    return undefined;
+  }
+
   const { data, error } = await supabase
     .from('students')
     .select('*')
@@ -34,6 +44,11 @@ export const getStudentByIdFromSupabase = async (id: string): Promise<Student | 
 
 // Add student to Supabase
 export const addStudentToSupabase = async (student: Omit<Student, 'id'>): Promise<Student | undefined> => {
+  if (!supabase) {
+    console.warn('Supabase client not initialized. Using mock data instead.');
+    return undefined;
+  }
+
   // Generate monthly fee status
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 
                   'July', 'August', 'September', 'October', 'November', 'December'];
@@ -66,6 +81,11 @@ export const addStudentToSupabase = async (student: Omit<Student, 'id'>): Promis
 
 // Delete student from Supabase
 export const deleteStudentFromSupabase = async (id: string): Promise<boolean> => {
+  if (!supabase) {
+    console.warn('Supabase client not initialized. Using mock data instead.');
+    return false;
+  }
+
   const { error } = await supabase
     .from('students')
     .delete()
@@ -81,6 +101,11 @@ export const deleteStudentFromSupabase = async (id: string): Promise<boolean> =>
 
 // Update student in Supabase
 export const updateStudentInSupabase = async (student: Student): Promise<Student | undefined> => {
+  if (!supabase) {
+    console.warn('Supabase client not initialized. Using mock data instead.');
+    return undefined;
+  }
+
   const { data, error } = await supabase
     .from('students')
     .update(student)
@@ -98,6 +123,11 @@ export const updateStudentInSupabase = async (student: Student): Promise<Student
 
 // Get all classes from Supabase
 export const getAllClassInfoFromSupabase = async (): Promise<ClassInfo[]> => {
+  if (!supabase) {
+    console.warn('Supabase client not initialized. Using mock data instead.');
+    return [];
+  }
+
   const { data, error } = await supabase
     .from('classes')
     .select('*');
@@ -112,6 +142,11 @@ export const getAllClassInfoFromSupabase = async (): Promise<ClassInfo[]> => {
 
 // Add class to Supabase
 export const addClassToSupabase = async (classInfo: Omit<ClassInfo, 'id'>): Promise<ClassInfo | undefined> => {
+  if (!supabase) {
+    console.warn('Supabase client not initialized. Using mock data instead.');
+    return undefined;
+  }
+
   const { data, error } = await supabase
     .from('classes')
     .insert(classInfo)
@@ -128,6 +163,11 @@ export const addClassToSupabase = async (classInfo: Omit<ClassInfo, 'id'>): Prom
 
 // Update fee structure in Supabase
 export const updateFeeStructureInSupabase = async (className: string, monthlyFee: number, admissionFee: number): Promise<boolean> => {
+  if (!supabase) {
+    console.warn('Supabase client not initialized. Using mock data instead.');
+    return false;
+  }
+
   const { error } = await supabase
     .from('fee_structure')
     .upsert({
